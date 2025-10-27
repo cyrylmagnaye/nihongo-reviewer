@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+why is the sound not working here import React, { useState, useEffect } from "react";
 
 export default function HiraganaQuizApp() {
   // App modes: modeSelect -> menu -> custom -> quiz -> finished -> review -> read -> write
@@ -18,10 +18,12 @@ export default function HiraganaQuizApp() {
   const [readFilter, setReadFilter] = useState("all");
   const [readQuery, setReadQuery] = useState("");
 
-  return (
-    <div>
-      <audio id="correctSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_0a3b4b2a32.mp3?filename=koto-ding.mp3"></audio>
-      <audio id="wrongSound" src="/wrongSound.mp3"></audio>
+  // small sounds (placeholder URLs, you can replace with local files)
+  const correctSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_0a3b4b2a32.mp3?filename=koto-ding.mp3");
+  const wrongSound = new Audio("/wrongSound.mp3");
+  wrongSound.addEventListener("error", (e) => {
+  console.error("Audio error:", e);
+});
 
 
   // Hiragana data: romaji + temporary mnemonic placeholder
@@ -86,28 +88,20 @@ export default function HiraganaQuizApp() {
   };
 
   // keyboard submit in quiz: handled by onKeyDown on input
- const checkAnswer = () => {
-  if (!quizSet.length) return;
-
-  const correct = quizSet[current][1];
-  const char = quizSet[current][0];
-  const isCorrect = answer.trim().toLowerCase() === correct;
-
-  const correctSound = document.getElementById("correctSound");
-  const wrongSound = document.getElementById("wrongSound");
-
-  if (isCorrect) {
-    setScore((s) => s + 1);
-    setFeedback("correct");
-    correctSound.currentTime = 0; // restart if clicked multiple times
-    correctSound.play();
-  } else {
-    setFeedback("wrong");
-    setShowCorrect(correct);
-    wrongSound.currentTime = 0;
-    wrongSound.play();
-  }
-};
+  const checkAnswer = () => {
+    if (!quizSet.length) return;
+    const correct = quizSet[current][1];
+    const char = quizSet[current][0];
+    const isCorrect = answer.trim().toLowerCase() === correct;
+    if (isCorrect) {
+      setScore((s) => s + 1);
+      setFeedback("correct");
+      if (soundEnabled) correctSound.play();
+    } else {
+      setFeedback("wrong");
+      setShowCorrect(correct);
+      if (soundEnabled) wrongSound.play();
+    }
     setResults((prev) => [...prev, { char, user: answer.trim().toLowerCase(), correct, isCorrect }]);
     setTimeout(() => {
       if (current + 1 < quizSet.length) {
@@ -354,8 +348,6 @@ export default function HiraganaQuizApp() {
       </div>
     );
   }
-         </div>
-  );
 
   return null;
 }
