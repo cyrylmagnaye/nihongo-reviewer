@@ -1,4 +1,4 @@
-why is the sound not working here import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 export default function HiraganaQuizApp() {
   // App modes: modeSelect -> menu -> custom -> quiz -> finished -> review -> read -> write
