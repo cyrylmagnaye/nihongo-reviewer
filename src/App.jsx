@@ -21,9 +21,6 @@ export default function HiraganaQuizApp() {
   // small sounds (placeholder URLs, you can replace with local files)
   const correctSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_0a3b4b2a32.mp3?filename=koto-ding.mp3");
   const wrongSound = new Audio("/wrongSound.mp3");
-  wrongSound.addEventListener("error", (e) => {
-  console.error("Audio error:", e);
-});
 
 
   // Hiragana data: romaji + temporary mnemonic placeholder
