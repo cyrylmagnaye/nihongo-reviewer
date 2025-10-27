@@ -18,13 +18,25 @@ export default function HiraganaQuizApp() {
   const [readFilter, setReadFilter] = useState("all");
   const [readQuery, setReadQuery] = useState("");
 
-  // small sounds (placeholder URLs, you can replace with local files)
-  const correctSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_0a3b4b2a32.mp3?filename=koto-ding.mp3");
-  const wrongSound = new Audio("/wrongSound.mp3");
-  wrongSound.addEventListener("error", (e) => {
+ // small sounds (placeholder URLs, you can replace with local files)
+const correctSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_0a3b4b2a32.mp3?filename=koto-ding.mp3");
+const wrongSound = new Audio("wrongSound.mp3");
+
+// optional: log errors if the audio fails to load
+wrongSound.addEventListener("error", (e) => {
   console.error("Audio error:", e);
 });
 
+// function to play sounds (like greenSound/redSound click handlers)
+const playCorrectSound = () => {
+  correctSound.currentTime = 0; // reset to start
+  correctSound.play();
+};
+
+const playWrongSound = () => {
+  wrongSound.currentTime = 0; // reset to start
+  wrongSound.play();
+};
 
   // Hiragana data: romaji + temporary mnemonic placeholder
   const hiraganaSets = {
@@ -88,20 +100,23 @@ export default function HiraganaQuizApp() {
   };
 
   // keyboard submit in quiz: handled by onKeyDown on input
-  const checkAnswer = () => {
-    if (!quizSet.length) return;
-    const correct = quizSet[current][1];
-    const char = quizSet[current][0];
-    const isCorrect = answer.trim().toLowerCase() === correct;
-    if (isCorrect) {
-      setScore((s) => s + 1);
-      setFeedback("correct");
-      if (soundEnabled) correctSound.play();
-    } else {
-      setFeedback("wrong");
-      setShowCorrect(correct);
-      if (soundEnabled) wrongSound.play();
-    }
+const checkAnswer = () => {
+  if (!quizSet.length) return;
+
+  const correct = quizSet[current][1];
+  const char = quizSet[current][0];
+  const isCorrect = answer.trim().toLowerCase() === correct;
+
+  if (isCorrect) {
+    setScore((s) => s + 1);
+    setFeedback("correct");
+    if (soundEnabled) playCorrectSound();
+  } else {
+    setFeedback("wrong");
+    setShowCorrect(correct);
+    if (soundEnabled) playWrongSound();
+  }
+};
     setResults((prev) => [...prev, { char, user: answer.trim().toLowerCase(), correct, isCorrect }]);
     setTimeout(() => {
       if (current + 1 < quizSet.length) {
