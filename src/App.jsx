@@ -69,47 +69,31 @@ export default function HiraganaQuizApp() {
     setResults([]);
     setScreen("quiz");
   };
-const wrongSoundRef = useRef(new Audio("/wrongSound.mp3"));
 
-const checkAnswer = () => {
-  if (!quizSet.length) return;
+  const checkAnswer = () => {
+    if (!quizSet.length) return;
+    const correct = quizSet[current][1];
+    const char = quizSet[current][0];
+    const isCorrect = answer.trim().toLowerCase() === correct;
 
-  const correct = quizSet[current][1];
-  const char = quizSet[current][0];
-  const isCorrect = answer.trim().toLowerCase() === correct;
+    if (isCorrect) setScore((s) => s + 1);
+    else setShowCorrect(correct);
 
-  if (isCorrect) {
-    setScore((s) => s + 1);
-  } else {
-    setShowCorrect(correct);
-    try {
-      wrongSoundRef.current.pause();
-      wrongSoundRef.current.currentTime = 0;
-      wrongSoundRef.current.play();
-    } catch (err) {
-      console.error("Audio playback failed:", err);
-    }
-  }
+    setFeedback(isCorrect ? "correct" : "wrong");
+    setResults((prev) => [...prev, { char, user: answer.trim().toLowerCase(), correct, isCorrect }]);
 
-  setFeedback(isCorrect ? "correct" : "wrong");
-  setResults((prev) => [
-    ...prev,
-    { char, user: answer.trim().toLowerCase(), correct, isCorrect },
-  ]);
-
-  setTimeout(() => {
-    if (current + 1 < quizSet.length) {
-      setCurrent((c) => c + 1);
-      setAnswer("");
-      setFeedback(null);
-      setShowCorrect("");
-    } else {
-      setFinished(true);
-      setScreen("finished");
-    }
-  }, 1500);
-};
-
+    setTimeout(() => {
+      if (current + 1 < quizSet.length) {
+        setCurrent((c) => c + 1);
+        setAnswer("");
+        setFeedback(null);
+        setShowCorrect("");
+      } else {
+        setFinished(true);
+        setScreen("finished");
+      }
+    }, 1500);
+  };
 
   const toggleCharacter = (char, romaji) => {
     setCustomSelection((prev) => {
