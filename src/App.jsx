@@ -10,44 +10,14 @@ export default function HiraganaQuizApp() {
   const [feedback, setFeedback] = useState(null);
   const [showCorrect, setShowCorrect] = useState("");
 
-  const wrongSoundRef = useRef(new Audio("/wrongSound.mp3")); // place in public/
+  const wrongSoundRef = useRef(new Audio("/wrongSound.mp3")); // place wrongSound.mp3 in public/
 
-  // Full Hiragana sets
+  // Hiragana categories
   const hiraganaSets = {
-    basic: {
-      あ: "a", い: "i", う: "u", え: "e", お: "o",
-      か: "ka", き: "ki", く: "ku", け: "ke", こ: "ko",
-      さ: "sa", し: "shi", す: "su", せ: "se", そ: "so",
-      た: "ta", ち: "chi", つ: "tsu", て: "te", と: "to",
-      な: "na", に: "ni", ぬ: "nu", ね: "ne", の: "no",
-      は: "ha", ひ: "hi", ふ: "fu", へ: "he", ほ: "ho",
-      ま: "ma", み: "mi", む: "mu", め: "me", も: "mo",
-      や: "ya", ゆ: "yu", よ: "yo",
-      ら: "ra", り: "ri", る: "ru", れ: "re", ろ: "ro",
-      わ: "wa", を: "wo", ん: "n"
-    },
-    youon: {
-      きゃ: "kya", きゅ: "kyu", きょ: "kyo",
-      しゃ: "sha", しゅ: "shu", しょ: "sho",
-      ちゃ: "cha", ちゅ: "chu", ちょ: "cho",
-      にゃ: "nya", にゅ: "nyu", にょ: "nyo",
-      ひゃ: "hya", ひゅ: "hyu", ひょ: "hyo",
-      みゃ: "mya", みゅ: "myu", みょ: "myo",
-      りゃ: "rya", りゅ: "ryu", りょ: "ryo",
-      ぎゃ: "gya", ぎゅ: "gyu", ぎょ: "gyo",
-      じゃ: "ja", じゅ: "ju", じょ: "jo",
-      びゃ: "bya", びゅ: "byu", びょ: "byo",
-      ぴゃ: "pya", ぴゅ: "pyu", ぴょ: "pyo"
-    },
-    dakouon: {
-      が: "ga", ぎ: "gi", ぐ: "gu", げ: "ge", ご: "go",
-      ざ: "za", じ: "ji", ず: "zu", ぜ: "ze", ぞ: "zo",
-      だ: "da", ぢ: "ji", づ: "zu", で: "de", ど: "do",
-      ば: "ba", び: "bi", ぶ: "bu", べ: "be", ぼ: "bo"
-    },
-    handakouon: {
-      ぱ: "pa", ぴ: "pi", ぷ: "pu", ぺ: "pe", ぽ: "po"
-    }
+    basic: { あ: "a", い: "i", う: "u", え: "e", お: "o" },
+    youon: { きゃ: "kya", きゅ: "kyu", きょ: "kyo" },
+    dakouon: { が: "ga", ぎ: "gi", ぐ: "gu" },
+    handakouon: { ぱ: "pa", ぴ: "pi", ぷ: "pu" },
   };
 
   const allChars = Object.entries({
@@ -78,15 +48,16 @@ export default function HiraganaQuizApp() {
     const [char, correct] = quizSet[current];
     const isCorrect = answer.trim().toLowerCase() === correct;
 
-    if (isCorrect) setScore((s) => s + 1);
-    else {
+    if (isCorrect) {
+      setScore((s) => s + 1);
+    } else {
       setShowCorrect(correct);
       try {
         wrongSoundRef.current.pause();
         wrongSoundRef.current.currentTime = 0;
         wrongSoundRef.current.play();
       } catch (err) {
-        console.error("Audio failed:", err);
+        console.error("Audio playback failed:", err);
       }
     }
 
@@ -115,25 +86,36 @@ export default function HiraganaQuizApp() {
       <div className="min-h-screen flex flex-col items-center justify-center bg-yellow-100 p-6">
         <h1 className="text-4xl font-bold mb-6 text-red-600">Hiragana Quiz</h1>
         <div className="flex flex-col gap-4">
-          {["basic", "youon", "dakouon", "handakouon", "all"].map((cat) => (
-            <button
-              key={cat}
-              onClick={() => startQuiz(cat)}
-              className={`px-6 py-3 rounded text-xl text-white ${
-                cat === "basic"
-                  ? "bg-red-500"
-                  : cat === "youon"
-                  ? "bg-blue-500"
-                  : cat === "dakouon"
-                  ? "bg-green-500"
-                  : cat === "handakouon"
-                  ? "bg-purple-500"
-                  : "bg-yellow-600"
-              }`}
-            >
-              {cat.charAt(0).toUpperCase() + cat.slice(1)}
-            </button>
-          ))}
+          <button
+            onClick={() => startQuiz("basic")}
+            className="px-6 py-3 bg-red-500 text-white rounded text-xl"
+          >
+            Basic
+          </button>
+          <button
+            onClick={() => startQuiz("youon")}
+            className="px-6 py-3 bg-blue-500 text-white rounded text-xl"
+          >
+            Youon
+          </button>
+          <button
+            onClick={() => startQuiz("dakouon")}
+            className="px-6 py-3 bg-green-500 text-white rounded text-xl"
+          >
+            Dakouon
+          </button>
+          <button
+            onClick={() => startQuiz("handakouon")}
+            className="px-6 py-3 bg-purple-500 text-white rounded text-xl"
+          >
+            Handakouon
+          </button>
+          <button
+            onClick={() => startQuiz("all")}
+            className="px-6 py-3 bg-yellow-600 text-white rounded text-xl"
+          >
+            All Characters
+          </button>
         </div>
       </div>
     );
@@ -205,3 +187,4 @@ export default function HiraganaQuizApp() {
 
   return null;
 }
+
