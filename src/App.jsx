@@ -18,7 +18,10 @@ export default function HiraganaQuizApp() {
   const [readFilter, setReadFilter] = useState("all");
   const [readQuery, setReadQuery] = useState("");
 
-
+  return (
+    <div>
+      <audio id="correctSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_0a3b4b2a32.mp3?filename=koto-ding.mp3"></audio>
+      <audio id="wrongSound" src="/wrongSound.mp3"></audio>
 
 
   // Hiragana data: romaji + temporary mnemonic placeholder
@@ -351,6 +354,8 @@ export default function HiraganaQuizApp() {
       </div>
     );
   }
+         </div>
+  );
 
   return null;
 }
