@@ -93,11 +93,11 @@ export default function HiraganaQuizApp() {
     if (isCorrect) {
       setScore((s) => s + 1);
       setFeedback("correct");
-      if (soundEnabled) correctSound.play();
+      correctSound.play();
     } else {
       setFeedback("wrong");
       setShowCorrect(correct);
-      if (soundEnabled) wrongSound.play();
+      wrongSound.play();
     }
     setResults((prev) => [...prev, { char, user: answer.trim().toLowerCase(), correct, isCorrect }]);
     setTimeout(() => {
