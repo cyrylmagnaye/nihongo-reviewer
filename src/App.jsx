@@ -78,8 +78,19 @@ export default function HiraganaQuizApp() {
     const char = quizSet[current][0];
     const isCorrect = answer.trim().toLowerCase() === correct;
 
-    if (isCorrect) setScore((s) => s + 1);
-    else setShowCorrect(correct);
+     if (isCorrect) {
+      setScore((s) => s + 1);
+    } else {
+      setShowCorrect(correct);
+      try {
+        wrongSoundRef.current.pause();
+        wrongSoundRef.current.currentTime = 0;
+        wrongSoundRef.current.play();
+      } catch (err) {
+        console.error("Audio playback failed:", err);
+      }
+    }
+
 
     setFeedback(isCorrect ? "correct" : "wrong");
     setResults((prev) => [...prev, { char, user: answer.trim().toLowerCase(), correct, isCorrect }]);
