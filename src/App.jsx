@@ -18,9 +18,9 @@ export default function HiraganaQuizApp() {
   const [readFilter, setReadFilter] = useState("all");
   const [readQuery, setReadQuery] = useState("");
 
-  // small sounds (updated URLs to working free sound effects from soundjay.com)
-  const correctSound = new Audio("https://www.soundjay.com/button/sounds/beep-07a.wav");
-  const wrongSound = new Audio("https://www.soundjay.com/misc/sounds/buzzer-01.wav");
+  // small sounds (placeholder URLs, you can replace with local files)
+  const correctSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_0a3b4b2a32.mp3?filename=koto-ding.mp3");
+  const wrongSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_3c12e76b45.mp3?filename=woodblock-hit.mp3");
 
   // Hiragana data: romaji + temporary mnemonic placeholder
   const hiraganaSets = {
@@ -155,7 +155,7 @@ export default function HiraganaQuizApp() {
       checkAnswer();
     }
   };
- 
+
   // Mode selection screen (before menu)
   if (screen === "modeSelect") {
     return (
@@ -165,7 +165,7 @@ export default function HiraganaQuizApp() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <button onClick={() => setScreen("readMode")}
               className="p-6 rounded-2xl bg-yellow-100 border-2 border-red-400 shadow hover:scale-105 transition">
-              <div className="text-2xl font-semibold mb-2">🔎 Read / Review</div>
+              <div className="text-2xl font-semibold mb-2">Read / Review</div>
               <div className="text-sm">Study characters with hints and quick search.</div>
             </button>
 
@@ -323,4 +323,27 @@ export default function HiraganaQuizApp() {
 
           <div className="bg-white border p-4 rounded mb-6">
             <h3 className="text-lg font-semibold mb-2">Results Summary</h3>
-           
+            <ul className="text-left max-h-48 overflow-y-auto space-y-2">
+              {results.map((r,i) => (
+                <li key={i} className={r.isCorrect ? 'text-green-600' : 'text-red-600'}>{r.char} → {r.user || '(blank)'} {r.isCorrect ? '✅' : `❌ (Correct: ${r.correct})`}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="flex gap-3 justify-center mb-4">
+            <button onClick={()=>setScreen('readMode')} className="px-4 py-2 bg-yellow-300 text-red-800 rounded">Review All</button>
+            {results.some(r=>!r.isCorrect) && <button onClick={()=>{setScreen('readMode'); setReadFilter('all');}} className="px-4 py-2 bg-blue-400 text-white rounded">View Read Mode</button>}
+            {results.some(r=>!r.isCorrect) && <button onClick={()=>startQuiz('review', wrongSet)} className="px-4 py-2 bg-red-500 text-white rounded">Quiz Wrong Only</button>}
+          </div>
+
+          <div className="flex justify-center gap-3">
+            <button onClick={resetToMenu} className="px-4 py-2 bg-red-500 text-white rounded">Back to Menu</button>
+            <button onClick={()=>setScreen('modeSelect')} className="px-4 py-2 bg-blue-400 text-white rounded">Change Mode</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
