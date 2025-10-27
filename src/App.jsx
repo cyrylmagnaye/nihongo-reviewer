@@ -73,6 +73,7 @@ const wrongSoundRef = useRef(new Audio("/wrongSound.mp3"));
 
 const checkAnswer = () => {
   if (!quizSet.length) return;
+
   const correct = quizSet[current][1];
   const char = quizSet[current][0];
   const isCorrect = answer.trim().toLowerCase() === correct;
@@ -81,11 +82,13 @@ const checkAnswer = () => {
     setScore((s) => s + 1);
   } else {
     setShowCorrect(correct);
-    wrongSoundRef.current.pause();
-    wrongSoundRef.current.currentTime = 0;
-    wrongSoundRef.current.play();
-
-
+    try {
+      wrongSoundRef.current.pause();
+      wrongSoundRef.current.currentTime = 0;
+      wrongSoundRef.current.play();
+    } catch (err) {
+      console.error("Audio playback failed:", err);
+    }
   }
 
   setFeedback(isCorrect ? "correct" : "wrong");
