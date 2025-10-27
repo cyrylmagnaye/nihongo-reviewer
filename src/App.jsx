@@ -69,15 +69,22 @@ export default function HiraganaQuizApp() {
     setResults([]);
     setScreen("quiz");
   };
-
+  // Ref for wrong sound
+  const wrongSoundRef = useRef(null);
+  
   const checkAnswer = () => {
     if (!quizSet.length) return;
     const correct = quizSet[current][1];
     const char = quizSet[current][0];
     const isCorrect = answer.trim().toLowerCase() === correct;
 
-    if (isCorrect) setScore((s) => s + 1);
-    else setShowCorrect(correct);
+     if (isCorrect) {
+      setScore((s) => s + 1);
+    } else {
+      setShowCorrect(correct);
+      // Play wrong answer sound
+      wrongSoundRef.current.play();
+    }
 
     setFeedback(isCorrect ? "correct" : "wrong");
     setResults((prev) => [...prev, { char, user: answer.trim().toLowerCase(), correct, isCorrect }]);
@@ -287,6 +294,8 @@ export default function HiraganaQuizApp() {
 
           {feedback === 'wrong' && <div className="text-red-600 mb-2">❌ Correct answer: {showCorrect}</div>}
           <div className="text-yellow-700">Question {current+1} of {quizSet.length} — Score: {score}</div>
+           {/* Audio element */}
+          <audio ref={wrongSoundRef} src="/wrongSound.mp3" preload="auto"></audio>
         </div>
       </div>
     );
