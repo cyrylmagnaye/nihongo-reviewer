@@ -20,8 +20,9 @@ export default function HiraganaQuizApp() {
 
  // small sounds (placeholder URLs, you can replace with local files)
 const correctSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_0a3b4b2a32.mp3?filename=koto-ding.mp3");
-const correctSound = new Audio("wrongSound.mp3");
-const wrongSound = new Audio("/wrongSound.mp3"); // add leading slash
+import wrongSoundFile from "./wrongSound.mp3"; // relative to this file
+const wrongSound = new Audio(wrongSoundFile);
+
 
 
 // optional: log errors if the audio fails to load
