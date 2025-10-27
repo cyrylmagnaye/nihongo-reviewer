@@ -72,24 +72,27 @@ export default function HiraganaQuizApp() {
     setScreen("quiz");
   };
 
-  const checkAnswer = () => {
-    if (!quizSet.length) return;
-    const correct = quizSet[current][1];
-    const char = quizSet[current][0];
-    const isCorrect = answer.trim().toLowerCase() === correct;
+const checkAnswer = () => {
+  if (!quizSet.length) return;
 
-     if (isCorrect) {
-      setScore((s) => s + 1);
-    } else {
-      setShowCorrect(correct);
-      try {
-        wrongSoundRef.current.pause();
-        wrongSoundRef.current.currentTime = 0;
-        wrongSoundRef.current.play();
-      } catch (err) {
-        console.error("Audio playback failed:", err);
-      }
+  const correct = quizSet[current][1];
+  const char = quizSet[current][0];
+  const isCorrect = answer.trim().toLowerCase() === correct;
+
+  if (isCorrect) {
+    setScore((s) => s + 1);
+  } else {
+    setShowCorrect(correct);
+    try {
+      wrongSoundRef.current.pause();
+      wrongSoundRef.current.currentTime = 0;
+      wrongSoundRef.current.play();
+    } catch (err) {
+      console.error("Audio playback failed:", err);
     }
+  }
+};
+
 
 
     setFeedback(isCorrect ? "correct" : "wrong");
