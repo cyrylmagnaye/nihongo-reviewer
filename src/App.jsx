@@ -1,53 +1,349 @@
-import React, { useEffect, useRef, useState } from "react";
-/* Full single-file app: Read/Quiz/Write with undo/redo trace canvas.
-   This is the same app content prepared earlier. */
-const hiraganaSets = {
-  basic: {"あ":"a","い":"i","う":"u","え":"e","お":"o","か":"ka","き":"ki","く":"ku","け":"ke","こ":"ko","さ":"sa","し":"shi","す":"su","せ":"se","そ":"so","た":"ta","ち":"chi","つ":"tsu","て":"te","と":"to","な":"na","に":"ni","ぬ":"nu","ね":"ne","の":"no","は":"ha","ひ":"hi","ふ":"fu","へ":"he","ほ":"ho","ま":"ma","み":"mi","む":"mu","め":"me","も":"mo","や":"ya","ゆ":"yu","よ":"yo","ら":"ra","り":"ri","る":"ru","れ":"re","ろ":"ro","わ":"wa","を":"wo","ん":"n"},
-  youon: {},
-  dakouon: {},
-  handakouon: {}
-};
-const mnemonics = {};
-Object.entries({...hiraganaSets.basic}).forEach(([k,v])=> mnemonics[k]=`Hint for ${k} (${v})`);
-const strokeData = {"あ":["M40 20 C20 20 10 60 50 70","M50 70 C90 80 80 40 60 30","M25 95 C45 85 65 85 85 95"],"い":["M40 20 C40 40 40 60 40 80"],"う":["M30 30 C45 20 70 20 60 45","M60 45 C50 70 30 80 20 95"],"え":["M20 30 C50 10 80 30 60 50","M30 60 C70 60 80 80 40 90"],"お":["M35 25 C20 40 20 70 50 75","M50 75 C80 80 80 50 60 40","M20 95 C40 85 60 85 80 95"],"か":["M20 20 L20 80","M20 40 C50 30 60 20 80 30","M35 60 L75 60"],"き":["M20 20 L20 80","M40 35 L80 35","M40 60 L80 60"],"く":["M30 30 C50 25 60 40 40 50"],"け":["M20 20 L20 80","M30 40 C60 30 80 25 80 55"],"こ":["M25 30 L75 30","M25 60 L75 60"]};
-function useAudio(url){const ref=useRef(null);useEffect(()=>{ref.current=new Audio(url)},[url]);return ref;}
-function StrokeSVG({char,playKey}){const strokes=strokeData[char]||[];return (<svg viewBox="0 0 100 120" width={220} height={260}><style>{`@keyframes draw{to{stroke-dashoffset:0}}`}</style>{strokes.map((d,i)=>(<path key={i} d={d} fill="none" stroke="#222" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{strokeDasharray:400,strokeDashoffset:400,animation: playKey?`draw 0.6s ${i*0.6}s forwards ease-out`:'none'}}/>))}</svg>);}
-export default function App(){
-  const [screen,setScreen]=useState("modeSelect");
-  const correctRef=useAudio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_0a3b4b2a32.mp3?filename=koto-ding.mp3");
-  const wrongRef=useAudio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_3c12e76b45.mp3?filename=woodblock-hit.mp3");
-  // quiz
-  const [quizList,setQuizList]=useState(Object.entries(hiraganaSets.basic).sort(()=>Math.random()-0.5));
-  const [qIndex,setQIndex]=useState(0);
-  const [qAnswer,setQAnswer]=useState("");
-  const [qResults,setQResults]=useState([]);
-  // read
-  const [readFilter,setReadFilter]=useState("basic");
-  const [readQuery,setReadQuery]=useState("");
-  // write
-  const canvasRef=useRef(null); const ctxRef=useRef(null); const drawingRef=useRef(false);
-  const [writeChars]=useState(Object.keys(hiraganaSets.basic));
-  const [writeIndex,setWriteIndex]=useState(0);
-  const [playKey,setPlayKey]=useState(false);
-  const historyRef=useRef([]); const redoRef=useRef([]); const HISTORY_LIMIT=25;
-  useEffect(()=>{const c=canvasRef.current; if(!c) return; c.width=240;c.height=240; const ctx=c.getContext('2d'); ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=8;ctx.strokeStyle='#222'; ctxRef.current=ctx; redrawFromHistory();},[screen]);
-  function getPos(e,ref=canvasRef){const rect=ref.current.getBoundingClientRect(); const touch=e.touches&&e.touches[0]; const clientX=touch?touch.clientX:e.clientX; const clientY=touch?touch.clientY:e.clientY; return {x:clientX-rect.left,y:clientY-rect.top};}
-  function startStroke(e){drawingRef.current=true; const p=getPos(e); const stroke=[{x:p.x,y:p.y}]; historyRef.current.push(stroke); if(historyRef.current.length>HISTORY_LIMIT) historyRef.current.shift(); redoRef.current=[]; drawPoint(p,true);}
-  function moveStroke(e){ if(!drawingRef.current) return; const p=getPos(e); const stroke=historyRef.current[historyRef.current.length-1]; stroke.push({x:p.x,y:p.y}); drawPoint(p,false);}
-  function endStroke(){ drawingRef.current=false;}
-  function drawPoint(p,moveTo=false){ const ctx=ctxRef.current; if(!ctx) return; if(moveTo){ ctx.beginPath(); ctx.moveTo(p.x,p.y);} else { ctx.lineTo(p.x,p.y); ctx.stroke(); } }
-  function clearCanvas(){ const ctx=ctxRef.current; if(!ctx) return; ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); redoRef.current=[]; }
-  function redrawFromHistory(){ const ctx=ctxRef.current; if(!ctx) return; ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); for(let s of historyRef.current){ ctx.beginPath(); ctx.moveTo(s[0].x,s[0].y); for(let i=1;i<s.length;i++) ctx.lineTo(s[i].x,s[i].y); ctx.stroke(); } }
-  function undo(){ if(historyRef.current.length===0) return; const s=historyRef.current.pop(); redoRef.current.push(s); redrawFromHistory(); }
-  function redo(){ if(redoRef.current.length===0) return; const s=redoRef.current.pop(); historyRef.current.push(s); redrawFromHistory(); }
-  function handleQuizKey(e){ if(e.key==='Enter'){ e.preventDefault(); submitQuizAnswer(); } }
-  function submitQuizAnswer(){ if(!quizList.length) return; const correct=quizList[qIndex][1]; const isCorrect = qAnswer.trim().toLowerCase()===correct; if(isCorrect) correctRef.current?.play(); else wrongRef.current?.play(); setQResults(prev=>[...prev,{char:quizList[qIndex][0],user:qAnswer.trim().toLowerCase(),correct,isCorrect}]); setQAnswer(''); if(qIndex+1<quizList.length) setQIndex(qIndex+1); else setScreen('finished'); }
-  function readEntries(){ let entries=Object.entries(hiraganaSets.basic); if(readFilter!=='all' && readFilter in hiraganaSets) entries=Object.entries(hiraganaSets[readFilter]); if(readQuery.trim()){ const q=readQuery.trim().toLowerCase(); entries=entries.filter(([ch,ro])=> ch.includes(q) || ro.includes(q)); } return entries; }
-  function playModel(){ setPlayKey(false); setTimeout(()=>setPlayKey(true),50); setTimeout(()=>setPlayKey(false),2500); correctRef.current?.play(); }
-  if(screen==="modeSelect"){ return (<div className="min-h-screen flex items-center justify-center p-6 bg-[#FFF8F0]"><div className="max-w-4xl w-full text-center"><h1 className="text-4xl font-bold mb-6 text-red-600">Nihongo Reviewer</h1><div className="grid grid-cols-1 md:grid-cols-3 gap-6"><button onClick={()=>{setScreen('readMode'); setReadFilter('basic')}} className="p-6 rounded-2xl bg-yellow-100 border-2 border-red-400 shadow">🔎 Read / Review</button><button onClick={()=>{ setScreen('quizMode'); setQuizList(Object.entries(hiraganaSets.basic).sort(()=>Math.random()-0.5)); setQIndex(0); setQResults([]); }} className="p-6 rounded-2xl bg-white border-2 border-blue-400 shadow">🧠 Quiz Mode</button><button onClick={()=>{ setScreen('writeMode'); }} className="p-6 rounded-2xl bg-blue-100 border-2 border-blue-500 shadow">✍️ Write Mode</button></div></div></div>); }
-  if(screen==="readMode"){ const entries=readEntries(); return (<div className="min-h-screen p-6 bg-[#FFF8F0]"><div className="max-w-5xl mx-auto"><div className="flex items-center justify-between mb-4"><button onClick={()=>setScreen('modeSelect')} className="px-3 py-2 bg-blue-400 text-white rounded">← Back</button><h2 className="text-2xl text-red-600 font-bold">ひらがな学習モード — Read / Review</h2><div/></div><div className="flex gap-3 items-center mb-4"><div className="flex space-x-2">{['basic','youon','dakouon','handakouon','all'].map(t=> (<button key={t} onClick={()=>setReadFilter(t)} className={`px-3 py-2 rounded ${readFilter===t ? 'bg-red-600 text-white' : 'bg-yellow-100 text-red-700'}`}>{t==='all'?'All':t.charAt(0).toUpperCase()+t.slice(1)}</button>))}</div><div className="ml-auto flex items-center gap-2"><input value={readQuery} onChange={e=>setReadQuery(e.target.value)} placeholder="Search Hiragana or Romaji... (e.g., か or ka)" className="px-3 py-2 rounded border" /><button onClick={()=>{ setReadQuery(''); setReadFilter('basic'); }} className="px-3 py-2 bg-blue-200 rounded">Reset</button></div></div><div className="bg-white rounded shadow overflow-hidden"><table className="w-full text-left"><thead className="bg-yellow-100"><tr><th className="p-3 border">Hiragana</th><th className="p-3 border">Romaji</th><th className="p-3 border">Mnemonic Hint</th></tr></thead><tbody>{entries.map(([ch,ro])=>(<tr key={ch} className="hover:bg-blue-50"><td className="p-3 border text-2xl text-red-600">{ch}</td><td className="p-3 border text-blue-700">{ro}</td><td className="p-3 border text-yellow-800">{mnemonics[ch]}</td></tr>))}</tbody></table></div><div className="mt-6 flex gap-3"><button onClick={()=>setScreen("modeSelect")} className="px-4 py-2 bg-red-500 text-white rounded">Back</button><button onClick={()=>{ setScreen("quizMode"); setQuizList(Object.entries(hiraganaSets.basic).sort(()=>Math.random()-0.5)); setQIndex(0); setQResults([]); }} className="px-4 py-2 bg-blue-600 text-white rounded">Quiz Basic</button></div></div></div>); }
-  if(screen==="quizMode"){ const current=quizList[qIndex]; return (<div className="min-h-screen p-6 flex items-center justify-center bg-[#FFF8F0]"><div className="text-center"><h2 className="text-3xl text-red-600 mb-6">Hiragana Quiz</h2><div className="text-8xl text-red-600 font-bold mb-6">{current?.[0]}</div><input value={qAnswer} onChange={e=>setQAnswer(e.target.value)} onKeyDown={handleQuizKey} placeholder="type romaji and press Enter" autoFocus className="border-4 text-2xl p-3 rounded-xl text-center w-56 mb-4 focus:outline-none"/><div className="flex gap-3 justify-center mb-4"><button onClick={submitQuizAnswer} className="px-4 py-2 bg-red-500 text-white rounded">Submit</button><button onClick={()=>setScreen("modeSelect")} className="px-4 py-2 bg-blue-400 text-white rounded">Quit</button></div><div className="text-yellow-700">Question {qIndex+1} of {quizList.length}</div></div></div>); }
-  if(screen==="finished"){ return (<div className="min-h-screen p-6 flex items-center justify-center bg-[#FFF8F0]"><div className="max-w-3xl w-full text-center bg-white p-6 rounded shadow"><h2 className="text-3xl text-red-600 mb-3">Quiz Finished</h2><p className="text-xl text-blue-700 mb-4">Score: {qResults.filter(r=>r.isCorrect).length} / {qResults.length}</p><div className="bg-white border p-4 rounded mb-4"><h3 className="font-semibold mb-2">Results</h3><ul className="text-left max-h-48 overflow-y-auto space-y-2">{qResults.map((r,i)=>(<li key={i} className={r.isCorrect?'text-green-600':'text-red-600'}>{r.char} → {r.user || '(blank)'} {r.isCorrect ? '✅' : `❌ (Correct: ${r.correct})`}</li>))}</ul></div><div className="flex gap-3 justify-center"><button onClick={()=>setScreen("readMode")} className="px-4 py-2 bg-yellow-300 text-red-800 rounded">Review All</button><button onClick={()=>{ const wrong = Object.fromEntries(qResults.filter(x=>!x.isCorrect).map(r=>[r.char,r.correct])); setScreen('readMode'); setReadFilter('all'); }} className="px-4 py-2 bg-blue-400 text-white rounded">View Read Mode</button><button onClick={()=>{ const wrong = Object.fromEntries(qResults.filter(x=>!x.isCorrect).map(r=>[r.char,r.correct])); setQuizList(Object.entries(wrong)); setQIndex(0); setQResults([]); setScreen('quizMode'); }} className="px-4 py-2 bg-red-500 text-white rounded">Quiz Wrong Only</button></div><div className="mt-4 flex justify-center gap-3"><button onClick={()=>{ setScreen('modeSelect'); setQResults([]); }} className="px-4 py-2 bg-red-500 text-white rounded">Back to Menu</button></div></div></div>); }
-  if(screen==="writeMode"){ const ch=writeChars[writeIndex]; return (<div className="min-h-screen p-6 bg-[#FFF8F0]"><div className="max-w-4xl mx-auto bg-white p-6 rounded shadow"><div className="flex items-center justify-between mb-4"><button onClick={()=>setScreen('modeSelect')} className="px-3 py-2 bg-blue-400 text-white rounded">← Back</button><h3 className="text-2xl text-red-600">Write Mode — Trace & Practice</h3><div></div></div><div className="grid grid-cols-2 gap-6"><div className="flex flex-col items-center"><div className="text-lg mb-2">Model (auto)</div><div className="bg-yellow-50 p-2 rounded"><StrokeSVG char={ch} playKey={playKey} /></div><div className="mt-3 flex gap-3"><button onClick={()=>playModel()} className="px-3 py-2 bg-red-500 text-white rounded">Play</button></div></div><div className="flex flex-col items-center"><div className="text-lg mb-2">Trace Area</div><div style={{width:240,height:240,border:'2px solid #2a4b8d'}}><canvas ref={canvasRef} onMouseDown={startStroke} onMouseMove={moveStroke} onMouseUp={endStroke} onMouseLeave={endStroke} onTouchStart={startStroke} onTouchMove={moveStroke} onTouchEnd={endStroke} style={{width:240,height:240,touchAction:'none'}}/></div><div className="mt-3 flex gap-2"><button onClick={undo} className="px-3 py-2 bg-yellow-300 rounded">Undo</button><button onClick={redo} className="px-3 py-2 bg-yellow-300 rounded">Redo</button><button onClick={()=>{ historyRef.current=[]; redoRef.current=[]; clearCanvas(); }} className="px-3 py-2 bg-red-500 text-white rounded">Clear</button><button onClick={()=>{ setWriteIndex((i)=> (i+1)%writeChars.length); historyRef.current=[]; redoRef.current=[]; clearCanvas(); }} className="px-3 py-2 bg-blue-400 text-white rounded">Next</button></div></div></div></div></div>); }
-  return <div className="p-6">Loading...</div>;
+import React, { useState, useEffect } from "react";
+
+export default function HiraganaQuizApp() {
+  // App modes: modeSelect -> menu -> custom -> quiz -> finished -> review -> read -> write
+  const [screen, setScreen] = useState("modeSelect");
+  const [quizSet, setQuizSet] = useState([]);
+  const [current, setCurrent] = useState(0);
+  const [answer, setAnswer] = useState("");
+  const [score, setScore] = useState(0);
+  const [finished, setFinished] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+  const [showCorrect, setShowCorrect] = useState("");
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [results, setResults] = useState([]);
+  const [customSelection, setCustomSelection] = useState({});
+
+  // Read mode controls
+  const [readFilter, setReadFilter] = useState("all");
+  const [readQuery, setReadQuery] = useState("");
+
+  // small sounds (placeholder URLs, you can replace with local files)
+  const correctSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_0a3b4b2a32.mp3?filename=koto-ding.mp3");
+  const wrongSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_3c12e76b45.mp3?filename=woodblock-hit.mp3");
+
+  // Hiragana data: romaji + temporary mnemonic placeholder
+  const hiraganaSets = {
+    basic: {
+      あ: "a", い: "i", う: "u", え: "e", お: "o",
+      か: "ka", き: "ki", く: "ku", け: "ke", こ: "ko",
+      さ: "sa", し: "shi", す: "su", せ: "se", そ: "so",
+      た: "ta", ち: "chi", つ: "tsu", て: "te", と: "to",
+      な: "na", に: "ni", ぬ: "nu", ね: "ne", の: "no",
+      は: "ha", ひ: "hi", ふ: "fu", へ: "he", ほ: "ho",
+      ま: "ma", み: "mi", む: "mu", め: "me", も: "mo",
+      や: "ya", ゆ: "yu", よ: "yo",
+      ら: "ra", り: "ri", る: "ru", れ: "re", ろ: "ro",
+      わ: "wa", を: "wo", ん: "n"
+    },
+    youon: {
+      きゃ: "kya", きゅ: "kyu", きょ: "kyo",
+      しゃ: "sha", しゅ: "shu", しょ: "sho",
+      ちゃ: "cha", ちゅ: "chu", ちょ: "cho",
+      にゃ: "nya", にゅ: "nyu", にょ: "nyo",
+      ひゃ: "hya", ひゅ: "hyu", ひょ: "hyo",
+      みゃ: "mya", みゅ: "myu", みょ: "myo",
+      りゃ: "rya", りゅ: "ryu", りょ: "ryo",
+      ぎゃ: "gya", ぎゅ: "gyu", ぎょ: "gyo",
+      じゃ: "ja", じゅ: "ju", じょ: "jo",
+      びゃ: "bya", びゅ: "byu", びょ: "byo",
+      ぴゃ: "pya", ぴゅ: "pyu", ぴょ: "pyo"
+    },
+    dakouon: { が: "ga", ぎ: "gi", ぐ: "gu", げ: "ge", ご: "go", ざ: "za", じ: "ji", ず: "zu", ぜ: "ze", ぞ: "zo", だ: "da", ぢ: "ji", づ: "zu", で: "de", ど: "do", ば: "ba", び: "bi", ぶ: "bu", べ: "be", ぼ: "bo" },
+    handakouon: { ぱ: "pa", ぴ: "pi", ぷ: "pu", ぺ: "pe", ぽ: "po" }
+  };
+
+  // build full list helpers
+  const allChars = Object.entries({ ...hiraganaSets.basic, ...hiraganaSets.youon, ...hiraganaSets.dakouon, ...hiraganaSets.handakouon });
+
+  // temporary mnemonic placeholders (include romaji in hint)
+  const mnemonics = {};
+  allChars.forEach(([k, v]) => {
+    mnemonics[k] = `Hint for ${k} (${v})`;
+  });
+
+  // Utility: start quiz with type or custom list
+  const startQuiz = (type, customList = null) => {
+    let selected;
+    if (type === "custom") {
+      selected = Object.entries(customSelection);
+    } else if (type === "review" && customList) {
+      selected = Object.entries(customList);
+    } else {
+      selected = Object.entries(hiraganaSets[type] || {});
+    }
+    if (selected.length === 0) return alert("Please select some characters first.");
+    setQuizSet(selected.sort(() => Math.random() - 0.5));
+    setCurrent(0);
+    setScore(0);
+    setFinished(false);
+    setFeedback(null);
+    setShowCorrect("");
+    setResults([]);
+    setScreen("quiz");
+  };
+
+  // keyboard submit in quiz: handled by onKeyDown on input
+  const checkAnswer = () => {
+    if (!quizSet.length) return;
+    const correct = quizSet[current][1];
+    const char = quizSet[current][0];
+    const isCorrect = answer.trim().toLowerCase() === correct;
+    if (isCorrect) {
+      setScore((s) => s + 1);
+      setFeedback("correct");
+      if (soundEnabled) correctSound.play();
+    } else {
+      setFeedback("wrong");
+      setShowCorrect(correct);
+      if (soundEnabled) wrongSound.play();
+    }
+    setResults((prev) => [...prev, { char, user: answer.trim().toLowerCase(), correct, isCorrect }]);
+    setTimeout(() => {
+      if (current + 1 < quizSet.length) {
+        setCurrent((c) => c + 1);
+        setAnswer("");
+        setFeedback(null);
+        setShowCorrect("");
+      } else {
+        setFinished(true);
+        setScreen("finished");
+      }
+    }, 1500);
+  };
+
+  const toggleCharacter = (char, romaji) => {
+    setCustomSelection((prev) => {
+      const updated = { ...prev };
+      if (updated[char]) delete updated[char];
+      else updated[char] = romaji;
+      return updated;
+    });
+  };
+
+  const resetToMenu = () => {
+    setScreen("menu");
+    setQuizSet([]);
+    setAnswer("");
+    setFeedback(null);
+    setShowCorrect("");
+    setResults([]);
+    setCustomSelection({});
+  };
+
+  // Read mode helpers: filter and search
+  const readData = () => {
+    let entries = Object.entries({ ...hiraganaSets.basic, ...hiraganaSets.youon, ...hiraganaSets.dakouon, ...hiraganaSets.handakouon });
+    if (readFilter && readFilter !== "all") {
+      entries = Object.entries(hiraganaSets[readFilter] || {});
+    }
+    if (readQuery && readQuery.trim()) {
+      const q = readQuery.trim().toLowerCase();
+      entries = entries.filter(([ch, rom]) => ch.includes(q) || rom.includes(q));
+    }
+    return entries;
+  };
+
+  // Results derived
+  const wrongAnswers = results.filter((r) => !r.isCorrect);
+  const wrongSet = Object.fromEntries(wrongAnswers.map((r) => [r.char, r.correct]));
+
+  // Enter key handler for quiz input
+  const handleQuizKey = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      checkAnswer();
+    }
+  };
+
+  // Mode selection screen (before menu)
+  if (screen === "modeSelect") {
+    return (
+      <div className="min-h-screen bg-[#FFF8F0] flex items-center justify-center p-6">
+        <div className="max-w-4xl w-full">
+          <h1 className="text-5xl font-bold mb-6 text-red-600 text-center">Choose Learning Mode</h1>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <button onClick={() => setScreen("readMode")}
+              className="p-6 rounded-2xl bg-yellow-100 border-2 border-red-400 shadow hover:scale-105 transition">
+              <div className="text-2xl font-semibold mb-2">🔎 Read / Review</div>
+              <div className="text-sm">Study characters with hints and quick search.</div>
+            </button>
+
+            <button onClick={() => setScreen("menu")}
+              className="p-6 rounded-2xl bg-white border-2 border-blue-400 shadow hover:scale-105 transition">
+              <div className="text-2xl font-semibold mb-2">🧠 Quiz Mode</div>
+              <div className="text-sm">Take quizzes (basic / custom / wrong-only).</div>
+            </button>
+
+            <button onClick={() => setScreen("writeMode")}
+              className="p-6 rounded-2xl bg-blue-100 border-2 border-blue-500 shadow hover:scale-105 transition">
+              <div className="text-2xl font-semibold mb-2">✍️ Write Mode</div>
+              <div className="text-sm">Practice stroke order & tracing (coming next).</div>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Read / Review Mode screen
+  if (screen === "readMode") {
+    const entries = readData();
+    return (
+      <div className="min-h-screen bg-[#FFF8F0] p-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex items-center justify-between mb-4">
+            <button onClick={() => setScreen("modeSelect")} className="px-4 py-2 bg-blue-400 text-white rounded">← Back</button>
+            <h1 className="text-3xl font-bold text-red-600">ひらがな学習モード — Read / Review</h1>
+            <div />
+          </div>
+
+          <div className="flex gap-3 items-center mb-4">
+            <div className="flex space-x-2">
+              {['all','basic','youon','dakouon','handakouon'].map(tab => (
+                <button key={tab} onClick={() => setReadFilter(tab)} className={`px-3 py-2 rounded ${readFilter===tab? 'bg-red-600 text-white' : 'bg-yellow-100 text-red-700'}`}>
+                  {tab === 'all' ? 'All' : tab.charAt(0).toUpperCase()+tab.slice(1)}
+                </button>
+              ))}
+            </div>
+            <div className="ml-auto flex items-center gap-2">
+              <input value={readQuery} onChange={(e)=>setReadQuery(e.target.value)} placeholder="Search Hiragana or Romaji... (e.g., か or ka)" className="px-3 py-2 rounded border" />
+              <button onClick={()=>{setReadQuery(''); setReadFilter('all');}} className="px-3 py-2 bg-blue-200 rounded">Reset</button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded shadow overflow-hidden">
+            <table className="w-full text-left">
+              <thead className="bg-yellow-100">
+                <tr>
+                  <th className="p-3 border">Hiragana</th>
+                  <th className="p-3 border">Romaji</th>
+                  <th className="p-3 border">Mnemonic Hint</th>
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map(([ch, ro]) => (
+                  <tr key={ch} className="hover:bg-blue-50 transition">
+                    <td className="p-3 border text-2xl text-red-600">{ch}</td>
+                    <td className="p-3 border text-blue-700">{ro}</td>
+                    <td className="p-3 border text-yellow-800">{mnemonics[ch]} </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-6 flex gap-3">
+            <button onClick={()=>setScreen('modeSelect')} className="px-4 py-2 bg-red-500 text-white rounded">Back</button>
+            <button onClick={()=>startQuiz('basic')} className="px-4 py-2 bg-blue-600 text-white rounded">Quiz Basic</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Main menu for quiz options
+  if (screen === "menu") {
+    return (
+      <div className="min-h-screen bg-[#FFF8F0] flex items-center justify-center p-6">
+        <div className="max-w-3xl w-full text-center">
+          <h1 className="text-4xl font-bold mb-6 text-red-600">Hiragana Quiz — Choose Category</h1>
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            {Object.keys(hiraganaSets).map((set) => (
+              <button key={set} onClick={() => startQuiz(set)} className="py-3 rounded-lg bg-yellow-100 border-2 border-red-400">{set.charAt(0).toUpperCase()+set.slice(1)}</button>
+            ))}
+            <button onClick={() => setScreen('custom')} className="py-3 rounded-lg bg-blue-100 border-2 border-blue-400 col-span-2">Customized</button>
+          </div>
+          <div className="flex justify-center gap-4">
+            <button onClick={()=>setScreen('modeSelect')} className="px-4 py-2 rounded bg-red-500 text-white">Back</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Custom selection screen
+  if (screen === "custom") {
+    return (
+      <div className="min-h-screen bg-[#FFF8F0] p-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl text-red-600 font-bold mb-4">Select Characters for Custom Quiz</h2>
+          <div className="grid grid-cols-10 gap-2 bg-white border-2 border-blue-500 p-4 rounded-lg shadow-inner mb-4 max-h-96 overflow-y-auto">
+            {allChars.map(([char, rom]) => (
+              <div key={char} onClick={() => toggleCharacter(char, rom)} className={`p-2 rounded text-xl cursor-pointer border ${customSelection[char] ? 'bg-red-300 border-red-500 text-white' : 'bg-yellow-50 border-red-300 text-red-700 hover:bg-yellow-100'}`}>
+                {char}
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-3 justify-center">
+            <button onClick={()=>startQuiz('custom')} className="px-4 py-2 bg-red-500 text-white rounded">Start Custom Quiz</button>
+            <button onClick={()=>setScreen('menu')} className="px-4 py-2 bg-blue-400 text-white rounded">Back</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Quiz screen
+  if (screen === "quiz") {
+    const item = quizSet[current];
+    return (
+      <div className="min-h-screen bg-[#FFF8F0] flex items-center justify-center p-6">
+        <div className="text-center">
+          <div className="text-8xl text-red-600 font-bold mb-6">{item[0]}</div>
+
+          <input
+            value={answer}
+            onChange={(e)=>setAnswer(e.target.value)}
+            onKeyDown={handleQuizKey}
+            className={`border-4 text-2xl p-3 rounded-xl text-center w-56 mb-4 focus:outline-none transition ${feedback === 'correct' ? 'border-green-500 bg-green-100' : feedback === 'wrong' ? 'border-red-500 bg-red-100' : 'border-red-500'}`}
+            placeholder="type romaji and press Enter"
+            autoFocus
+          />
+
+          <div className="flex gap-3 justify-center mb-3">
+            <button onClick={checkAnswer} className="px-4 py-2 bg-red-500 text-white rounded">Submit</button>
+            <button onClick={resetToMenu} className="px-4 py-2 bg-blue-400 text-white rounded">Quit</button>
+          </div>
+
+          {feedback === 'wrong' && <div className="text-red-600 mb-2">❌ Correct answer: {showCorrect}</div>}
+          <div className="text-yellow-700">Question {current+1} of {quizSet.length} — Score: {score}</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Finished screen with review options
+  if (screen === "finished") {
+    return (
+      <div className="min-h-screen bg-[#FFF8F0] p-6 flex items-center justify-center">
+        <div className="max-w-3xl w-full text-center">
+          <h2 className="text-4xl text-red-600 font-bold mb-4">Quiz Finished!</h2>
+          <p className="text-2xl text-blue-700 mb-6">Your score: {score} / {quizSet.length}</p>
+
+          <div className="bg-white border p-4 rounded mb-6">
+            <h3 className="text-lg font-semibold mb-2">Results Summary</h3>
+            <ul className="text-left max-h-48 overflow-y-auto space-y-2">
+              {results.map((r,i) => (
+                <li key={i} className={r.isCorrect ? 'text-green-600' : 'text-red-600'}>{r.char} → {r.user || '(blank)'} {r.isCorrect ? '✅' : `❌ (Correct: ${r.correct})`}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="flex gap-3 justify-center mb-4">
+            <button onClick={()=>setScreen('readMode')} className="px-4 py-2 bg-yellow-300 text-red-800 rounded">Review All</button>
+            {results.some(r=>!r.isCorrect) && <button onClick={()=>{setScreen('readMode'); setReadFilter('all');}} className="px-4 py-2 bg-blue-400 text-white rounded">View Read Mode</button>}
+            {results.some(r=>!r.isCorrect) && <button onClick={()=>startQuiz('review', wrongSet)} className="px-4 py-2 bg-red-500 text-white rounded">Quiz Wrong Only</button>}
+          </div>
+
+          <div className="flex justify-center gap-3">
+            <button onClick={resetToMenu} className="px-4 py-2 bg-red-500 text-white rounded">Back to Menu</button>
+            <button onClick={()=>setScreen('modeSelect')} className="px-4 py-2 bg-blue-400 text-white rounded">Change Mode</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }
