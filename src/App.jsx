@@ -116,7 +116,7 @@ const checkAnswer = () => {
     setShowCorrect(correct);
     if (soundEnabled) playWrongSound();
   }
-};
+
     setResults((prev) => [...prev, { char, user: answer.trim().toLowerCase(), correct, isCorrect }]);
     setTimeout(() => {
       if (current + 1 < quizSet.length) {
