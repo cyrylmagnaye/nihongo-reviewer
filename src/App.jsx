@@ -10,7 +10,6 @@ export default function HiraganaQuizApp() {
   const [finished, setFinished] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const [showCorrect, setShowCorrect] = useState("");
-  const [soundEnabled, setSoundEnabled] = useState(true);
   const [results, setResults] = useState([]);
   const [customSelection, setCustomSelection] = useState({});
 
