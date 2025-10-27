@@ -155,7 +155,7 @@ export default function HiraganaQuizApp() {
       checkAnswer();
     }
   };
-
+ 
   // Mode selection screen (before menu)
   if (screen === "modeSelect") {
     return (
