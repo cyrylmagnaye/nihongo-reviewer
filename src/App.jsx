@@ -19,26 +19,8 @@ export default function HiraganaQuizApp() {
   const [readQuery, setReadQuery] = useState("");
 
   // small sounds (placeholder URLs, you can replace with local files)
-  const correctSoundRef = React.useRef(null);
-const wrongSoundRef = React.useRef(null);
-
-useEffect(() => {
-  correctSoundRef.current = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_0a3b4b2a32.mp3?filename=koto-ding.mp3");
-  wrongSoundRef.current = new Audio("/wrongSound.mp3");
-
-  wrongSoundRef.current.addEventListener("error", (e) => {
-    console.error("Audio error:", e);
-  });
-}, []);
-
-// ...
-
-if (soundEnabled && feedback === 'correct') {
-  correctSoundRef.current.play();
-}
-if (soundEnabled && feedback === 'wrong') {
-  wrongSoundRef.current.play();
-}
+ const correctSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_0a3b4b2a32.mp3?filename=koto-ding.mp3");
+const wrongSound = new Audio("/wrongSound.mp3");
 
 
 
