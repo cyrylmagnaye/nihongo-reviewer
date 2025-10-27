@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 
 export default function HiraganaQuizApp() {
   // App modes: modeSelect -> menu -> custom -> quiz -> finished -> review -> read -> write
@@ -10,7 +10,6 @@ export default function HiraganaQuizApp() {
   const [finished, setFinished] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const [showCorrect, setShowCorrect] = useState("");
-  const [soundEnabled, setSoundEnabled] = useState(true);
   const [results, setResults] = useState([]);
   const [customSelection, setCustomSelection] = useState({});
 
@@ -18,33 +17,9 @@ export default function HiraganaQuizApp() {
   const [readFilter, setReadFilter] = useState("all");
   const [readQuery, setReadQuery] = useState("");
 
- // small sounds (placeholder URLs, you can replace with local files)
-const correctSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_0a3b4b2a32.mp3?filename=koto-ding.mp3");
-const wrongSound = new Audio("/wrongSoundFile.mp3");
-
-
-
-// optional: log errors if the audio fails to load
-wrongSound.addEventListener("error", (e) => {
-  console.error("Audio error:", e);
-});
-
-// function to play sounds (like greenSound/redSound click handlers)
-const playCorrectSound = () => {
-  correctSound.currentTime = 0; // reset to start
-  correctSound.play();
-};
-
-const playWrongSound = () => {
-  wrongSound.currentTime = 0; // reset to start
-  wrongSound.play();
-};
-
   // Hiragana data: romaji + temporary mnemonic placeholder
   const hiraganaSets = {
-    basic: {
-      あ: "a", い: "i", う: "u", え: "e", お: "o",
-      か: "ka", き: "ki", く: "ku", け: "ke", こ: "ko",
+    basic: { あ: "a", い: "i", う: "u", え: "e", お: "o", か: "ka", き: "ki", く: "ku", け: "ke", こ: "ko",
       さ: "sa", し: "shi", す: "su", せ: "se", そ: "so",
       た: "ta", ち: "chi", つ: "tsu", て: "te", と: "to",
       な: "na", に: "ni", ぬ: "nu", ね: "ne", の: "no",
@@ -54,8 +29,7 @@ const playWrongSound = () => {
       ら: "ra", り: "ri", る: "ru", れ: "re", ろ: "ro",
       わ: "wa", を: "wo", ん: "n"
     },
-    youon: {
-      きゃ: "kya", きゅ: "kyu", きょ: "kyo",
+    youon: { きゃ: "kya", きゅ: "kyu", きょ: "kyo",
       しゃ: "sha", しゅ: "shu", しょ: "sho",
       ちゃ: "cha", ちゅ: "chu", ちょ: "cho",
       にゃ: "nya", にゅ: "nyu", にょ: "nyo",
@@ -71,26 +45,21 @@ const playWrongSound = () => {
     handakouon: { ぱ: "pa", ぴ: "pi", ぷ: "pu", ぺ: "pe", ぽ: "po" }
   };
 
-  // build full list helpers
   const allChars = Object.entries({ ...hiraganaSets.basic, ...hiraganaSets.youon, ...hiraganaSets.dakouon, ...hiraganaSets.handakouon });
 
-  // temporary mnemonic placeholders (include romaji in hint)
   const mnemonics = {};
   allChars.forEach(([k, v]) => {
     mnemonics[k] = `Hint for ${k} (${v})`;
   });
 
-  // Utility: start quiz with type or custom list
   const startQuiz = (type, customList = null) => {
     let selected;
-    if (type === "custom") {
-      selected = Object.entries(customSelection);
-    } else if (type === "review" && customList) {
-      selected = Object.entries(customList);
-    } else {
-      selected = Object.entries(hiraganaSets[type] || {});
-    }
+    if (type === "custom") selected = Object.entries(customSelection);
+    else if (type === "review" && customList) selected = Object.entries(customList);
+    else selected = Object.entries(hiraganaSets[type] || {});
+
     if (selected.length === 0) return alert("Please select some characters first.");
+
     setQuizSet(selected.sort(() => Math.random() - 0.5));
     setCurrent(0);
     setScore(0);
@@ -101,25 +70,18 @@ const playWrongSound = () => {
     setScreen("quiz");
   };
 
-  // keyboard submit in quiz: handled by onKeyDown on input
-const checkAnswer = () => {
-  if (!quizSet.length) return;
+  const checkAnswer = () => {
+    if (!quizSet.length) return;
+    const correct = quizSet[current][1];
+    const char = quizSet[current][0];
+    const isCorrect = answer.trim().toLowerCase() === correct;
 
-  const correct = quizSet[current][1];
-  const char = quizSet[current][0];
-  const isCorrect = answer.trim().toLowerCase() === correct;
+    if (isCorrect) setScore((s) => s + 1);
+    else setShowCorrect(correct);
 
-  if (isCorrect) {
-    setScore((s) => s + 1);
-    setFeedback("correct");
-    if (soundEnabled) playCorrectSound();
-  } else {
-    setFeedback("wrong");
-    setShowCorrect(correct);
-    if (soundEnabled) playWrongSound();
-  }
-
+    setFeedback(isCorrect ? "correct" : "wrong");
     setResults((prev) => [...prev, { char, user: answer.trim().toLowerCase(), correct, isCorrect }]);
+
     setTimeout(() => {
       if (current + 1 < quizSet.length) {
         setCurrent((c) => c + 1);
@@ -152,12 +114,9 @@ const checkAnswer = () => {
     setCustomSelection({});
   };
 
-  // Read mode helpers: filter and search
   const readData = () => {
     let entries = Object.entries({ ...hiraganaSets.basic, ...hiraganaSets.youon, ...hiraganaSets.dakouon, ...hiraganaSets.handakouon });
-    if (readFilter && readFilter !== "all") {
-      entries = Object.entries(hiraganaSets[readFilter] || {});
-    }
+    if (readFilter && readFilter !== "all") entries = Object.entries(hiraganaSets[readFilter] || {});
     if (readQuery && readQuery.trim()) {
       const q = readQuery.trim().toLowerCase();
       entries = entries.filter(([ch, rom]) => ch.includes(q) || rom.includes(q));
@@ -165,17 +124,16 @@ const checkAnswer = () => {
     return entries;
   };
 
-  // Results derived
   const wrongAnswers = results.filter((r) => !r.isCorrect);
   const wrongSet = Object.fromEntries(wrongAnswers.map((r) => [r.char, r.correct]));
 
-  // Enter key handler for quiz input
   const handleQuizKey = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
       checkAnswer();
     }
   };
+
 
   // Mode selection screen (before menu)
   if (screen === "modeSelect") {
