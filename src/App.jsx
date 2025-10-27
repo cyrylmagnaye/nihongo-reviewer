@@ -17,6 +17,8 @@ export default function HiraganaQuizApp() {
   const [readFilter, setReadFilter] = useState("all");
   const [readQuery, setReadQuery] = useState("");
 
+  const wrongSoundRef = useRef(new Audio("/wrongSound.mp3")); // place wrongSound.mp3 in public/
+  
   // Hiragana data: romaji + temporary mnemonic placeholder
   const hiraganaSets = {
     basic: { あ: "a", い: "i", う: "u", え: "e", お: "o", か: "ka", き: "ki", く: "ku", け: "ke", こ: "ko",
