@@ -10,7 +10,6 @@ export default function HiraganaQuizApp() {
   const [finished, setFinished] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const [showCorrect, setShowCorrect] = useState("");
-  const [soundEnabled, setSoundEnabled] = useState(true);
   const [results, setResults] = useState([]);
   const [customSelection, setCustomSelection] = useState({});
 
@@ -18,13 +17,11 @@ export default function HiraganaQuizApp() {
   const [readFilter, setReadFilter] = useState("all");
   const [readQuery, setReadQuery] = useState("");
 
-  // small sounds (placeholder URLs, you can replace with local files)
- const correctSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_0a3b4b2a32.mp3?filename=koto-ding.mp3");
-const wrongSound = new Audio("/wrongSound.mp3");
+  // small sounds (you can replace these with your own)
+  const correctSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_0a3b4b2a32.mp3?filename=koto-ding.mp3");
+  const wrongSound = new Audio("/wrongSound.mp3");
 
-
-
-  // Hiragana data: romaji + temporary mnemonic placeholder
+  // Hiragana data
   const hiraganaSets = {
     basic: {
       あ: "a", い: "i", う: "u", え: "e", お: "o",
@@ -64,7 +61,7 @@ const wrongSound = new Audio("/wrongSound.mp3");
     mnemonics[k] = `Hint for ${k} (${v})`;
   });
 
-  // Utility: start quiz with type or custom list
+  // start quiz
   const startQuiz = (type, customList = null) => {
     let selected;
     if (type === "custom") {
@@ -85,7 +82,7 @@ const wrongSound = new Audio("/wrongSound.mp3");
     setScreen("quiz");
   };
 
-  // keyboard submit in quiz: handled by onKeyDown on input
+  // check answer
   const checkAnswer = () => {
     if (!quizSet.length) return;
     const correct = quizSet[current][1];
@@ -94,11 +91,11 @@ const wrongSound = new Audio("/wrongSound.mp3");
     if (isCorrect) {
       setScore((s) => s + 1);
       setFeedback("correct");
-      if (soundEnabled) correctSound.play();
+      correctSound.play();
     } else {
       setFeedback("wrong");
       setShowCorrect(correct);
-      if (soundEnabled) wrongSound.play();
+      wrongSound.play();
     }
     setResults((prev) => [...prev, { char, user: answer.trim().toLowerCase(), correct, isCorrect }]);
     setTimeout(() => {
@@ -133,7 +130,6 @@ const wrongSound = new Audio("/wrongSound.mp3");
     setCustomSelection({});
   };
 
-  // Read mode helpers: filter and search
   const readData = () => {
     let entries = Object.entries({ ...hiraganaSets.basic, ...hiraganaSets.youon, ...hiraganaSets.dakouon, ...hiraganaSets.handakouon });
     if (readFilter && readFilter !== "all") {
@@ -146,11 +142,9 @@ const wrongSound = new Audio("/wrongSound.mp3");
     return entries;
   };
 
-  // Results derived
   const wrongAnswers = results.filter((r) => !r.isCorrect);
   const wrongSet = Object.fromEntries(wrongAnswers.map((r) => [r.char, r.correct]));
 
-  // Enter key handler for quiz input
   const handleQuizKey = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -158,7 +152,7 @@ const wrongSound = new Audio("/wrongSound.mp3");
     }
   };
 
-  // Mode selection screen (before menu)
+  // Screens below ⬇️
   if (screen === "modeSelect") {
     return (
       <div className="min-h-screen bg-[#FFF8F0] flex items-center justify-center p-6">
@@ -179,8 +173,8 @@ const wrongSound = new Audio("/wrongSound.mp3");
 
             <button onClick={() => setScreen("writeMode")}
               className="p-6 rounded-2xl bg-blue-100 border-2 border-blue-500 shadow hover:scale-105 transition">
-              <div className="text-2xl font-semibold mb-2">wala pa hehe</div>
-              <div className="text-sm">Practice stroke order & tracing (coming next).</div>
+              <div className="text-2xl font-semibold mb-2">Coming Soon</div>
+              <div className="text-sm">Practice stroke order & tracing (future update).</div>
             </button>
           </div>
         </div>
@@ -188,7 +182,6 @@ const wrongSound = new Audio("/wrongSound.mp3");
     );
   }
 
-  // Read / Review Mode screen
   if (screen === "readMode") {
     const entries = readData();
     return (
@@ -209,7 +202,7 @@ const wrongSound = new Audio("/wrongSound.mp3");
               ))}
             </div>
             <div className="ml-auto flex items-center gap-2">
-              <input value={readQuery} onChange={(e)=>setReadQuery(e.target.value)} placeholder="Search Hiragana or Romaji... (e.g., か or ka)" className="px-3 py-2 rounded border" />
+              <input value={readQuery} onChange={(e)=>setReadQuery(e.target.value)} placeholder="Search Hiragana or Romaji..." className="px-3 py-2 rounded border" />
               <button onClick={()=>{setReadQuery(''); setReadFilter('all');}} className="px-3 py-2 bg-blue-200 rounded">Reset</button>
             </div>
           </div>
@@ -228,7 +221,7 @@ const wrongSound = new Audio("/wrongSound.mp3");
                   <tr key={ch} className="hover:bg-blue-50 transition">
                     <td className="p-3 border text-2xl text-red-600">{ch}</td>
                     <td className="p-3 border text-blue-700">{ro}</td>
-                    <td className="p-3 border text-yellow-800">{mnemonics[ch]} </td>
+                    <td className="p-3 border text-yellow-800">{mnemonics[ch]}</td>
                   </tr>
                 ))}
               </tbody>
@@ -244,7 +237,6 @@ const wrongSound = new Audio("/wrongSound.mp3");
     );
   }
 
-  // Main menu for quiz options
   if (screen === "menu") {
     return (
       <div className="min-h-screen bg-[#FFF8F0] flex items-center justify-center p-6">
@@ -264,7 +256,6 @@ const wrongSound = new Audio("/wrongSound.mp3");
     );
   }
 
-  // Custom selection screen
   if (screen === "custom") {
     return (
       <div className="min-h-screen bg-[#FFF8F0] p-6">
@@ -286,7 +277,6 @@ const wrongSound = new Audio("/wrongSound.mp3");
     );
   }
 
-  // Quiz screen
   if (screen === "quiz") {
     const item = quizSet[current];
     return (
@@ -315,7 +305,6 @@ const wrongSound = new Audio("/wrongSound.mp3");
     );
   }
 
-  // Finished screen with review options
   if (screen === "finished") {
     return (
       <div className="min-h-screen bg-[#FFF8F0] p-6 flex items-center justify-center">
@@ -327,25 +316,49 @@ const wrongSound = new Audio("/wrongSound.mp3");
             <h3 className="text-lg font-semibold mb-2">Results Summary</h3>
             <ul className="text-left max-h-48 overflow-y-auto space-y-2">
               {results.map((r,i) => (
-                <li key={i} className={r.isCorrect ? 'text-green-600' : 'text-red-600'}>{r.char} → {r.user || '(blank)'} {r.isCorrect ? '✅' : `❌ (Correct: ${r.correct})`}</li>
+                <li key={i} className={r.isCorrect ? 'text-green-600' : 'text-red-600'}>
+                  {r.char} → {r.user || '(blank)'} {r.isCorrect ? '✅' : `❌ (
+                  {r.char} → {r.user || '(blank)'} {r.isCorrect ? '✅' : `❌ (correct: ${r.correct})`}
+                </li>
               ))}
             </ul>
           </div>
 
-          <div className="flex gap-3 justify-center mb-4">
-            <button onClick={()=>setScreen('readMode')} className="px-4 py-2 bg-yellow-300 text-red-800 rounded">Review All</button>
-            {results.some(r=>!r.isCorrect) && <button onClick={()=>{setScreen('readMode'); setReadFilter('all');}} className="px-4 py-2 bg-blue-400 text-white rounded">View Read Mode</button>}
-            {results.some(r=>!r.isCorrect) && <button onClick={()=>startQuiz('review', wrongSet)} className="px-4 py-2 bg-red-500 text-white rounded">Quiz Wrong Only</button>}
-          </div>
-
-          <div className="flex justify-center gap-3">
+          <div className="flex justify-center gap-4">
             <button onClick={resetToMenu} className="px-4 py-2 bg-red-500 text-white rounded">Back to Menu</button>
-            <button onClick={()=>setScreen('modeSelect')} className="px-4 py-2 bg-blue-400 text-white rounded">Change Mode</button>
+            {wrongAnswers.length > 0 && (
+              <button onClick={() => startQuiz('review', wrongSet)} className="px-4 py-2 bg-blue-600 text-white rounded">
+                Retry Wrong Answers
+              </button>
+            )}
           </div>
         </div>
       </div>
     );
   }
 
-  return null;
+  if (screen === "writeMode") {
+    return (
+      <div className="min-h-screen bg-[#FFF8F0] flex flex-col items-center justify-center p-6">
+        <h2 className="text-4xl text-blue-700 font-bold mb-3">Writing Practice Mode</h2>
+        <p className="text-lg text-yellow-800 max-w-xl text-center mb-6">
+          This feature will help you practice writing Hiragana characters
+          by tracing their stroke order. Stay tuned — it’s coming soon! ✍️
+        </p>
+        <button
+          onClick={() => setScreen("modeSelect")}
+          className="px-4 py-2 bg-red-500 text-white rounded-lg"
+        >
+          Back to Main Menu
+        </button>
+      </div>
+    );
+  }
+
+  // fallback if something goes wrong
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#FFF8F0] text-red-600 text-3xl">
+      Loading...
+    </div>
+  );
 }
