@@ -20,7 +20,7 @@ export default function HiraganaQuizApp() {
 
   // small sounds (placeholder URLs, you can replace with local files)
   const correctSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_0a3b4b2a32.mp3?filename=koto-ding.mp3");
-  const wrongSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_3c12e76b45.mp3?filename=woodblock-hit.mp3");
+  const wrongSound = new Audio("/wrongSound.mp3");
 
   // Hiragana data: romaji + temporary mnemonic placeholder
   const hiraganaSets = {
